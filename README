@@ -1,0 +1,112 @@
+NAMES
+
+    Class::Attribute
+
+DESCRIPTION
+    
+    This module allows automatic definition of class attributes, validations
+    types and defaults. You can define attributes as shown below:
+
+
+    package MyUser;
+
+    use DateTime;
+    use YAML;
+    # exports symbols into the MyUser namespace and then
+    # pushes itself into @MyUser::ISA.
+    use Class::Attribute;
+
+    attribute 'id',      is_int, protected, default => 1;
+    attribute 'name',    is_string(10, 40, 'a name of 10 - 40 chars');
+    attribute 'sex',     is_in( ['M', 'F'], 'sex (M/F)' ), private;
+    attribute 'age',     is_int, default => 18;
+    attribute 'email',   is_email;
+    attribute 'dob',     is_date;
+    attribute 'updated', isa => 'DateTime', default => sub { DateTime->now };
+
+    sub new {
+        my $self = shift->SUPER::new(@_);
+        my %args = @_;
+        $self->set_sex($args{sex}) if exists $args{sex};
+
+        return $self;
+    }
+
+    sub serialize {
+        my ($self) = @_;
+        if ($self->is_updated) {
+            $self->set_id(time) unless defined $self->get_id;
+            $self->set_updated(DateTime->now);
+            my %attrs = $self->_get_all_attributes;
+            return Dump(\%attrs);
+        }
+    }
+
+    1;
+
+    # and now in your script ...
+
+    use MyUser;
+    my $user = MyUser->new(sex => 'M');
+
+    # should return FALSE.
+    print $user->has_email;
+
+    $user->set_name('foo bar baz');
+    $user->set_email('foo@bar.com');
+
+    # should return TRUE.
+    print $user->has_email;
+
+    # should return 18.
+    print $user->get_age, "\n";
+
+    $user->set_age('2009-123-1');
+    # returns validation errors.
+    my @errors = $user->validate;
+
+    # should throw a permission error.
+    $user->set_id(1);
+
+    # should serialize the fields including ones set by default.
+    print $user->serialize, "\n";
+
+
+INSTALLATION
+
+To install this module, run the following commands:
+
+	perl Build.PL
+	./Build
+	./Build test
+	./Build install
+
+SUPPORT AND DOCUMENTATION
+
+After installing, you can find documentation for this module with the
+perldoc command.
+
+    perldoc Class::Attribute
+
+You can also look for information at:
+
+    RT, CPAN's request tracker
+        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Class-Attribute
+
+    AnnoCPAN, Annotated CPAN documentation
+        http://annocpan.org/dist/Class-Attribute
+
+    CPAN Ratings
+        http://cpanratings.perl.org/d/Class-Attribute
+
+    Search CPAN
+        http://search.cpan.org/dist/Class-Attribute
+
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2009 Bharanee Rathna
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+

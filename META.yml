@@ -1,0 +1,19 @@
+---
+name: Class-Attribute
+version: 0.01
+author:
+  - 'Bharanee Rathna <deepfryed à gmail>'
+abstract: Another way to define class attributes!!!
+license: perl
+resources:
+  license: http://dev.perl.org/licenses/
+build_requires:
+  Test::More: 0
+provides:
+  Class::Attribute:
+    file: lib/Class/Attribute.pm
+    version: 0.01
+generated_by: Module::Build version 0.280801
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
