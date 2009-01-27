@@ -1,8 +1,14 @@
 #!/usr/bin/perl
 
+package MyDateTime;
+
+use overload '""' => \&stringify;
+
+sub now { bless [ time ], shift }
+sub stringify { return shift->[0] }
+
 package Foo;
 use Class::Attribute;
-use DateTime;
 
 attribute 'id',      is_int, protected, default => 1;
 attribute 'name',    is_string(10, 40, 'a name of 10 - 40 chars');
@@ -10,7 +16,7 @@ attribute 'sex',     is_in( ['M', 'F'], 'sex (M/F)' ), private;
 attribute 'age',     is_int, default => 18;
 attribute 'email',   is_email;
 attribute 'dob',     is_date;
-attribute 'updated', isa => 'DateTime', default => sub { DateTime->now };
+attribute 'updated', isa => 'MyDateTime', default => sub { MyDateTime->now };
 
 package Bar;
 use base qw(Foo);
@@ -36,12 +42,12 @@ isa_ok(my $bar = Bar->new, 'Bar');
 
 is($foo->get_id, 1, 'default for id = 1');
 is($foo->get_age, 18, 'default for age = 18');
-isa_ok($foo->get_updated, 'DateTime');
+isa_ok($foo->get_updated, 'MyDateTime');
 
 ## should fail, id is protected.
 throws_ok
     { $foo->set_id(1) }
-    qr/Called a protected method/i,
+    qr/Called a protected mutator/i,
     'set_id is protected';
 
 ## should fail, not a valid email.
@@ -60,12 +66,12 @@ check_validation(
 
 # works.
 ok($foo->set_dob('1978-01-17'), 'set dob');
-ok($foo->set_updated(DateTime->now), 'set updated');
+ok($foo->set_updated(MyDateTime->now), 'set updated');
 
 # set_sex is private.
 throws_ok
     { $bar->set_sex('M') }
-    qr/Called a private method/,
+    qr/Called a private mutator Foo::set_sex/,
     'private method is really private, can only be called inside Foo';
 
 ok($bar->set_id(2), 'Bar::set_id works');
@@ -75,7 +81,7 @@ ok($bar->set_name('foo bar baz'), 'Bar::set_name works on name > 10c long');
 my $updated = $bar->get_updated;
 my %attributes = $bar->get_all_attributes;
 
-isa_ok($updated, 'DateTime', 'updated time');
+isa_ok($updated, 'MyDateTime', 'updated time');
 is_deeply(
     \%attributes,
     {

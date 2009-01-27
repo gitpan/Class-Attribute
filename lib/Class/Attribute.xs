@@ -65,81 +65,11 @@ _read_attribute (self)
     if (value != NULL)
         PUSHs(*value);
 
-SV*
-_read_protected_attribute (self)
-    SV *self;
-  ALIAS:
-  PPCODE:
-    char *caller = HvNAME(CopSTASH(PL_curcop));
-    char *class  = (char *)sv_reftype(SvRV(self), 1);
-    if (
-        strcmp(caller, "Class::Attribute") != 0
-        && !sv_derived_from(newSVpv(caller, strlen(caller)), class)
-    )
-        croak("Called a protected method: %s is not derived from %s", caller, class);
-    AV *stash = (AV*)SvRV(self);
-    SV **value = av_fetch(stash, (int)ix, 0);
-    if (value != NULL)
-        PUSHs(*value);
-
-SV*
-_read_private_attribute (self)
-    SV *self;
-  ALIAS:
-  PPCODE:
-    char *caller = HvNAME(CopSTASH(PL_curcop));
-    char *class  = (char *)sv_reftype(SvRV(self), 1);
-    if (
-        strcmp(caller, "Class::Attribute") != 0
-        && strcmp(class, caller) == 0
-    )
-        croak("Called a private method: %s is not %s", caller, class);
-    AV *stash = (AV*)SvRV(self);
-    SV **value = av_fetch(stash, (int)ix, 0);
-    if (value != NULL)
-        PUSHs(*value);
-
 int
 _write_attribute (self, ... )
     SV *self;
   ALIAS:
   PPCODE:
-    if (items != 2)
-        croak("mutator expects a value");
-    AV *stash = (AV*)SvRV(self);
-    av_store(stash, (int)ix, newSVsv(ST(1)));
-    XPUSHi(1);
-
-int
-_write_protected_attribute (self, ... )
-    SV *self;
-  ALIAS:
-  PPCODE:
-    char *caller = HvNAME(CopSTASH(PL_curcop));
-    char *class  = (char *)sv_reftype(SvRV(self), 1);
-    if (
-        strcmp(caller, "Class::Attribute") != 0
-        && !sv_derived_from(newSVpv(caller, strlen(caller)), class)
-    )
-        croak("Called a protected method: %s is not derived from %s", caller, class);
-    if (items != 2)
-        croak("mutator expects a value");
-    AV *stash = (AV*)SvRV(self);
-    av_store(stash, (int)ix, newSVsv(ST(1)));
-    XPUSHi(1);
-
-int
-_write_private_attribute (self, ... )
-    SV *self;
-  ALIAS:
-  PPCODE:
-    char *caller = HvNAME(CopSTASH(PL_curcop));
-    char *class  = (char *)sv_reftype(SvRV(self), 1);
-    if (
-        strcmp(caller, "Class::Attribute") != 0
-        && strcmp(class, caller) == 0
-    )
-        croak("Called a private method: %s is not %s", caller, class);
     if (items != 2)
         croak("mutator expects a value");
     AV *stash = (AV*)SvRV(self);
@@ -160,32 +90,6 @@ _make_accessor(class, name, index)
         croak("failed to create an accessor!");
 
 void
-_make_protected_accessor(class, name, index)
-    char *class;
-    char* name;
-    int index;
-  PPCODE:
-    char* file = __FILE__;
-    CV * cv;
-    cv = newXS(name, XS_Class__Attribute__read_protected_attribute, file);
-    XSANY.any_i32 = index;
-    if (cv == NULL)
-        croak("failed to create an accessor!");
-
-void
-_make_private_accessor(class, name, index)
-    char *class;
-    char* name;
-    int index;
-  PPCODE:
-    char* file = __FILE__;
-    CV * cv;
-    cv = newXS(name, XS_Class__Attribute__read_private_attribute, file);
-    XSANY.any_i32 = index;
-    if (cv == NULL)
-        croak("failed to create an accessor!");
-
-void
 _make_mutator(class, name, index)
     char *class;
     char* name;
@@ -194,32 +98,6 @@ _make_mutator(class, name, index)
     char* file = __FILE__;
     CV * cv;
     cv = newXS(name, XS_Class__Attribute__write_attribute, file);
-    XSANY.any_i32 = index;
-    if (cv == NULL)
-        croak("failed to create a mutator!");
-
-void
-_make_protected_mutator(class, name, index)
-    char *class;
-    char* name;
-    int index;
-  PPCODE:
-    char* file = __FILE__;
-    CV * cv;
-    cv = newXS(name, XS_Class__Attribute__write_protected_attribute, file);
-    XSANY.any_i32 = index;
-    if (cv == NULL)
-        croak("failed to create a mutator!");
-
-void
-_make_private_mutator(class, name, index)
-    char *class;
-    char* name;
-    int index;
-  PPCODE:
-    char* file = __FILE__;
-    CV * cv;
-    cv = newXS(name, XS_Class__Attribute__write_private_attribute, file);
     XSANY.any_i32 = index;
     if (cv == NULL)
         croak("failed to create a mutator!");

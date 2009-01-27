@@ -5,6 +5,7 @@ use strict;
 
 use Carp;
 use Scalar::Util qw(blessed);
+use List::Util   qw(first);
 
 our $METHOD_DELIM = '_';
 
@@ -20,11 +21,11 @@ Class::Attribute - Another way to define class attributes!!!
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 require XSLoader;
 XSLoader::load('Class::Attribute', $VERSION);
@@ -35,7 +36,7 @@ This is a very light weight and fast implementation for defining
 attributes without having to resort to full blown use of Moose.
 
 The module tries to fill in gaps found in several other similar implementations
-found on CPAN; Class::Accessor, Class::InsideOut, Object::InsideOut, Moose & Mouse.
+found on CPAN; Class::Accessor, Class::InsideOut, Object::InsideOut, Moose and Mouse.
 
 Class::Attribute,
 
@@ -68,7 +69,7 @@ and thats it.
     attribute 'name',    is_string(10, 40, 'a name of 10 - 40 chars');
     attribute 'sex',     is_in( ['M', 'F'], 'sex (M/F)' ), private;
     attribute 'age',     is_int, default => 18;
-    attribute 'email',   is_email;
+    attribute 'email',   is_email, predicate => 'has_email';
     attribute 'dob',     is_date;
     attribute 'updated', isa => 'DateTime', default => sub { DateTime->now };
 
@@ -122,17 +123,16 @@ and thats it.
 
 =head1 EXPORT
 
-attribute, public, private, protected, readonly, meta,
-is_int, is_float, is_email, is_boolean, is_string, is_date, is_datetime, is_in
+attribute, public, private, protected, readonly, meta, is_int, is_float, is_email,
+is_boolean, is_string, is_date, is_datetime, is_in
 
 =head1 FUNCTIONS
 
 
 =head2 import
 
- This is where all the inital compile time magic happens.
- All this does is pushes some of the useful symbols to the
- caller namespace.
+This is where all the initial compile time work happens. All this does is pushes some of the useful symbols to the
+caller namespace. Read EXPORT section for the list of exported symbols.
 
 =cut
 
@@ -152,9 +152,11 @@ sub import {
         *{"$class:\:$func"} = *$func;
     }
 
-    push @{"$class:\:ISA"}, __PACKAGE__;
-
-   $class->_init_class_config;
+    # avoid repeated inheritence and re-using slots.
+    if (!first { $_ eq __PACKAGE__ } @{"$class:\:ISA"}) {
+        push @{"$class:\:ISA"}, __PACKAGE__;
+        $class->_init_class_config;
+    }
 }
 
 =head2 new
@@ -216,8 +218,8 @@ The possible attribute definitions are explained below.
 
 I<CAVEATS>
 
- The following matrix illustrates the types of accessors and mutators that
- will be created given the attribute type/permission.
+The following matrix illustrates the types of accessors and mutators that
+will be created given the attribute type/permission.
 
             |    accessor    |    mutator
  -----------|----------------|--------------
@@ -227,16 +229,14 @@ I<CAVEATS>
  readonly   |    public      |    N/A
  meta       |    protected   |    protected
 
- The readonly attribute definition will result in no accessor being created.
- The meta attribute has only a private accessor and mutator.
+The readonly attribute definition will result in no accessor being created.
+The meta attribute has only a private accessor and mutator.
 
-2. Attribute ISA - Checks the value in the mutator to be an instance of a particular class.
+2. Attribute ISA - Checks the value in the validator if it is an instance of a particular class.
 
  # e.g.  attribute 'dob', public, isa => 'DateTime';
 
-
-3. Attribute Default - Any scalar value or CODEREF that will be assigned by default
-in the constructor.
+3. Attribute Default - Any scalar value or CODEREF that will be assigned by default in the constructor.
 
  # e.g.  attribute 'age', public, default => 18;
 
@@ -247,7 +247,7 @@ a regular expression and the second an explanation what the validation does.
 
 The following validators are exported as functions into the caller namespace.
 
-B<is_int, is_float, is_boolean, is_email>
+ is_int, is_float, is_boolean, is_email, is_string, is_in, is_date, is_datetime
 
 5. Attribute Predicate - A method name that is created to check if the attribute value
 has been set or instantiated.
@@ -318,6 +318,98 @@ sub attribute {
     }
 }
 
+# TODO XSify this.
+sub _make_protected_accessor {
+    my ($class, $method, $slot) = @_;
+
+    (my $realmethod = rand()) =~ s/\./_/;
+    $realmethod = $method . $realmethod;
+    $class->_make_accessor($realmethod, $slot);
+
+    no strict 'refs';
+    *$method = sub {
+        my ($self) = @_;
+        my ($caller, $subroutine) = (caller(0))[0, 3];
+        (my $class) = $subroutine =~ m/^(.*)::/;
+
+        if ($caller eq $class or $caller eq __PACKAGE__ or $caller->isa($class)) {
+            goto &$realmethod;
+        }
+        else {
+            croak("Called a protected accessor $method");
+        }
+    };
+}
+
+# TODO XSify this.
+sub _make_private_accessor {
+    my ($class, $method, $slot) = @_;
+
+    (my $realmethod = rand()) =~ s/\./_/;
+    $realmethod = $method . $realmethod;
+    $class->_make_accessor($realmethod, $slot);
+
+    no strict 'refs';
+    *$method = sub {
+        my ($self) = @_;
+        my ($caller, $subroutine) = (caller(0))[0, 3];
+        (my $class) = $subroutine =~ m/^(.*)::/;
+
+        if ($caller eq $class or $caller eq __PACKAGE__) {
+            goto &$realmethod;
+        }
+        else {
+            croak("Called a private accessor $method");
+        }
+    };
+}
+
+# TODO XSify this.
+sub _make_protected_mutator {
+    my ($class, $method, $slot) = @_;
+
+    (my $realmethod = rand()) =~ s/\./_/;
+    $realmethod = $method . $realmethod;
+    $class->_make_mutator($realmethod, $slot);
+
+    no strict 'refs';
+    *$method = sub {
+        my ($self, $value) = @_;
+        my ($caller, $subroutine) = (caller(0))[0, 3];
+        (my $class) = $subroutine =~ m/^(.*)::/;
+
+        if ($caller eq $class or $caller eq __PACKAGE__ or $caller->isa($class)) {
+            goto &$realmethod;
+        }
+        else {
+            croak("Called a protected mutator $method");
+        }
+    };
+}
+
+# TODO XSify this.
+sub _make_private_mutator {
+    my ($class, $method, $slot) = @_;
+
+    (my $realmethod = rand()) =~ s/\./_/;
+    $realmethod = $method . $realmethod;
+    $class->_make_mutator($realmethod, $slot);
+
+    no strict 'refs';
+    *$method = sub {
+        my ($self, $value) = @_;
+        my ($caller, $subroutine) = (caller(0))[0, 3];
+        (my $class) = $subroutine =~ m/^(.*)::/;
+
+        if ($caller eq $class or $caller eq __PACKAGE__) {
+            goto &$realmethod;
+        }
+        else {
+            croak("Called a private mutator $method");
+        }
+    };
+}
+
 =head2 validate
 
 validates the attributes against any specified validators and returns
@@ -349,23 +441,11 @@ sub validate {
     return @errors;
 }
 
-=head2 _init_class_config
-
-A private method that initializes config variables for the given class.
-
-=cut
-
 sub _init_class_config {
     croak 'Cannot access private method _init_class_config' unless caller eq __PACKAGE__;
     my ($class) = @_;
     _define_config_attribute($class, $_) for qw(_slots _slot_count _defaults _validator);
 }
-
-=head2 _define_config_attribute
-
-Defines a private attribute for storing class specific information.
-
-=cut
 
 sub _define_config_attribute {
     croak 'Cannot access private method _define_config_attribute' unless caller eq __PACKAGE__;
@@ -374,25 +454,9 @@ sub _define_config_attribute {
     no strict 'refs';
     ${"$class\::$var"} ||= {};
     *{"$class\::$var"} = sub {
-        Carp::croak "Cannot access private method $var"   unless caller eq __PACKAGE__;
         no strict 'refs'; ${"$class\::$var"}
     };
     return ${"$class\::$var"};
-}
-
-=head2 _define_config_method
-
-Defines a private method that does something class specific.
-
-=cut
-sub _define_config_method {
-    croak 'Cannot access private method _define_config_method' unless caller eq __PACKAGE__;
-    my ($class, $method, $code) = @_;
-    no strict 'refs';
-    *{"$class\::$method"} = sub {
-        Carp::croak "Cannot access private method $method"   unless caller eq __PACKAGE__;
-        goto &$code;
-    };
 }
 
 =head2 _get_all_attributes
@@ -444,10 +508,10 @@ use constant is_boolean  => 'like', [BOOLEAN,  'a Boolean Value'  ];
 use constant is_date     => 'like', [DATE,     'a date'           ];
 use constant is_datetime => 'like', [DATETIME, 'a datetime value' ];
 
-=head2 is_string
+=head2 is_string($min_len, $max_len, $comment)
 
 A validator that accepts 3 arguments (min length, max length, comment)
-and returns a hash that Class::Attribute likes.
+and returns a hash that Class::Attribute likes. All parameters are optional.
 
 =cut
 
@@ -460,9 +524,9 @@ sub is_string {
     return 'like', [ $regex, $comment ];
 }
 
-=head2 is_in
+=head2 is_in($list_ref, $comment)
 
-A validator that checks if the supplied value is an element of a provided
+A validator that checks if an attribute is an element of a provided
 set of values.
 
 =cut

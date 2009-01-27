@@ -9,6 +9,7 @@ my $builder = Module::Build->new(
     dist_version_from   => 'lib/Class/Attribute.pm',
     build_requires => {
         'Test::More' => 0,
+        'Class::Accessor' => 0,
     },
     add_to_cleanup      => [ 'Class-Attribute-*' ],
     create_makefile_pl => 'traditional',

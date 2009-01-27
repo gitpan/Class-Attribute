@@ -5,6 +5,7 @@ WriteMakefile
           'NAME' => 'Class::Attribute',
           'VERSION_FROM' => 'lib/Class/Attribute.pm',
           'PREREQ_PM' => {
+                           'Class::Accessor' => 0,
                            'Test::More' => 0
                          },
           'INSTALLDIRS' => 'site',

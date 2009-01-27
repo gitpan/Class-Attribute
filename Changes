@@ -1,5 +1,10 @@
 Revision history for Class-Attribute
 
+0.02	2009-01-27
+	- Fixed private, protected attribute gatekeepers.
+	- Updated and cleaned up POD.
+	- Updated tests.	
+
 0.01    2009-01-26
         First version, released to piss off people already turned off
 	by TIMTOWTDI.
