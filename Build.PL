@@ -12,7 +12,7 @@ my $builder = Module::Build->new(
         'Class::Accessor' => 0,
     },
     add_to_cleanup      => [ 'Class-Attribute-*' ],
-    create_makefile_pl => 'traditional',
+    create_makefile_pl => 'small',
 );
 
 $builder->create_build_script();
