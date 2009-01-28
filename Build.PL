@@ -8,8 +8,9 @@ my $builder = Module::Build->new(
     dist_author         => 'Bharanee Rathna <deepfryed à gmail>',
     dist_version_from   => 'lib/Class/Attribute.pm',
     build_requires => {
-        'Test::More' => 0,
-        'Class::Accessor' => 0,
+        'Test::More'       => 0,
+        'Test::NoWarnings' => 0,
+        'Class::Accessor'  => 0,
     },
     add_to_cleanup      => [ 'Class-Attribute-*' ],
     create_makefile_pl => 'small',

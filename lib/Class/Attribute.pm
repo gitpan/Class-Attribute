@@ -21,11 +21,11 @@ Class::Attribute - Another way to define class attributes!!!
 
 =head1 VERSION
 
-Version 0.021
+Version 0.022
 
 =cut
 
-our $VERSION = '0.021';
+our $VERSION = '0.022';
 
 require XSLoader;
 XSLoader::load('Class::Attribute', $VERSION);

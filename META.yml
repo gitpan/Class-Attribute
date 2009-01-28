@@ -1,6 +1,6 @@
 ---
 name: Class-Attribute
-version: 0.021
+version: 0.022
 author:
   - 'Bharanee Rathna <deepfryed à gmail>'
 abstract: Another way to define class attributes!!!
@@ -10,11 +10,12 @@ resources:
 build_requires:
   Class::Accessor: 0
   Test::More: 0
+  Test::NoWarnings: 0
 provides:
   Class::Attribute:
     file: lib/Class/Attribute.pm
-    version: 0.021
-generated_by: Module::Build version 0.2808
+    version: 0.022
+generated_by: Module::Build version 0.280801
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html
   version: 1.2

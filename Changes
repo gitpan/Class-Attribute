@@ -1,5 +1,11 @@
 Revision history for Class-Attribute
 
+0.022  	2009-01-28
+	- Fixed Build.PL to generate build dependencies correctly.
+
+0.021  	2009-01-28
+	- Fixed Build.PL to generate Makefile.PL that compiles XS correctly.
+
 0.02	2009-01-27
 	- Fixed private, protected attribute gatekeepers.
 	- Updated and cleaned up POD.
