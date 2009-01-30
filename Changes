@@ -1,5 +1,8 @@
 Revision history for Class-Attribute
 
+0.023  	2009-01-30
+	- Fixed Build.PL to generate build dependencies correctly (I never learn do I ?)
+
 0.022  	2009-01-28
 	- Fixed Build.PL to generate build dependencies correctly.
 

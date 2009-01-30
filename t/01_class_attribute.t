@@ -34,9 +34,6 @@ use Test::More tests => 18;
 use Test::NoWarnings;
 use Test::Exception;
 
-use DateTime;
-
-my $now = DateTime->now;
 isa_ok(my $foo = Foo->new, 'Foo');
 isa_ok(my $bar = Bar->new, 'Bar');
 

@@ -10,6 +10,7 @@ my $builder = Module::Build->new(
     build_requires => {
         'Test::More'       => 0,
         'Test::NoWarnings' => 0,
+        'Test::Exception'  => 0,
         'Class::Accessor'  => 0,
     },
     add_to_cleanup      => [ 'Class-Attribute-*' ],
