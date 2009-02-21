@@ -1,5 +1,8 @@
 Revision history for Class-Attribute
 
+0.024  	2009-02-15
+	- Checks for private and protected methods moved to XSUB routines.
+
 0.023  	2009-01-30
 	- Fixed Build.PL to generate build dependencies correctly (I never learn do I ?)
 
