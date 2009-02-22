@@ -1,5 +1,8 @@
 Revision history for Class-Attribute
 
+0.025  	2009-02-22
+	- Fixed broken tests
+
 0.024  	2009-02-15
 	- Checks for private and protected methods moved to XSUB routines.
 
